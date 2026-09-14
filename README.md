@@ -1,57 +1,33 @@
-# Human Verification Protocol — Web Version
+# Are You Human? — Verification Game
 
-A Flask + HTML/CSS/JavaScript implementation of the deliberately ridiculous CAPTCHA game.
+A VS Code-ready TypeScript + Express web game styled like a deliberately ridiculous CAPTCHA.
 
-## Requirements
+## Features
+- Five levels: Easy (30s), Medium (60s), Hard (75s), Extra Hard (105s), Complex (120s)
+- 10-minute global round timer
+- Fresh randomized questions on every start/retry
+- Exactly 5 answer choices per challenge
+- Distractors become increasingly similar as difficulty rises
+- Wrong answer or timeout fails the run
+- Retry the failed level for a 60-second global-time penalty
+- Server keeps the correct answer private; the browser receives only public question data
+- Final reward: `🤖 HUMAN VERIFICATION COMPLETE` and `KEY: R`
 
-- Python 3.10+
-- Flask
-
-## Setup in VS Code
-
-Open this folder in VS Code, then run:
-
-```bash
-python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-Install Flask:
+## Run in VS Code
+Install Node.js LTS, open this folder in VS Code, then:
 
 ```bash
-pip install -r requirements.txt
+npm install
+npm run dev
 ```
 
-Start the server:
+Open http://127.0.0.1:5000
 
+For production-style:
 ```bash
-python app.py
+npm run build
+npm start
 ```
 
-Open the address shown by Flask, normally:
-
-http://127.0.0.1:5000
-
-## Project structure
-
-```text
-human_verification_web/
-├── app.py
-├── requirements.txt
-├── README.md
-├── templates/
-│   └── index.html
-└── static/
-    └── style.css
-```
-
-## Notes
-
-The server generates fresh questions on every level request. The browser handles the live countdown and game state.
-
-The answer key is kept in the server response for this prototype. For a production game, answers should not be exposed to the browser; use a server-side session/game ID and submit answer IDs instead.
+### Important
+This is a game/verification simulation, not a security-grade CAPTCHA. For a real anti-bot system, add server-side rate limiting, signed sessions, CSRF protection where appropriate, bot detection, and database/session storage.

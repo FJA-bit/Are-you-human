@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Are You Human? — Verification</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#eef3f8}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
+.card{width:min(760px,100%);background:white;border:1px solid #d9e1ea;border-radius:20px;box-shadow:0 18px 55px #17203318;overflow:hidden}
+.top{padding:24px 28px;border-bottom:1px solid #e5eaf0;display:flex;justify-content:space-between;gap:20px;align-items:center}
+.brand{font-weight:800;font-size:20px}.sub{font-size:12px;color:#738096;margin-top:3px}
+.shield{width:46px;height:46px;border-radius:12px;background:#edf5ff;display:grid;place-items:center;font-size:24px}
+.content{padding:30px}.verify{font-size:13px;color:#657287;text-transform:uppercase;letter-spacing:.12em;font-weight:800}
+h1{font-size:34px;margin:8px 0 8px}.intro{color:#667085;line-height:1.6;margin-top:0}
+.progress{display:flex;gap:6px;margin:24px 0}.dot{height:6px;flex:1;border-radius:99px;background:#e4e9ef}.dot.active{background:#2f6fed}.dot.done{background:#69b578}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}.stat{background:#f7f9fb;border:1px solid #e6ebf1;border-radius:12px;padding:12px 14px}.label{font-size:11px;text-transform:uppercase;color:#7b8798;letter-spacing:.08em}.value{font-size:21px;font-weight:800;margin-top:3px}
+.timer{font-variant-numeric:tabular-nums}.question{font-size:20px;font-weight:750;line-height:1.45;white-space:pre-wrap;margin:20px 0}
+.options{display:grid;gap:10px}.opt{border:1px solid #d6dee8;background:#fff;border-radius:12px;padding:15px;text-align:left;cursor:pointer;font-size:15px;transition:.15s;display:flex;gap:12px;align-items:center}.opt:hover{border-color:#2f6fed;background:#f5f9ff;transform:translateY(-1px)}.badge{width:28px;height:28px;border-radius:8px;background:#eef2f6;display:grid;place-items:center;font-weight:800;color:#536176}
+button.primary{margin-top:20px;width:100%;border:0;border-radius:12px;padding:15px;background:#172033;color:white;font-weight:800;cursor:pointer;font-size:15px}
+button.secondary{margin-top:10px;width:100%;border:1px solid #ccd5e0;background:white;border-radius:12px;padding:13px;font-weight:750;cursor:pointer}
+.notice{margin-top:18px;padding:14px;border-radius:12px;display:none;line-height:1.5}.bad{display:block;background:#fff1f1;color:#a12525;border:1px solid #ffd2d2}.good{display:block;background:#effaf1;color:#216b2d;border:1px solid #cbe9cf}
+.reward{text-align:center;padding:20px;border:1px dashed #91c59a;border-radius:16px;background:#f4fff5}.key{font-size:40px;font-weight:900;letter-spacing:.15em;margin:10px}
+.small{font-size:12px;color:#7a8698;text-align:center;margin-top:16px}
+@media(max-width:560px){.content{padding:22px}h1{font-size:28px}.top{padding:18px 20px}}
+</style>
+</head>
+<body>
+<main class="card">
+<header class="top"><div><div class="brand">Humanity Verification</div><div class="sub">A deliberately ridiculous CAPTCHA</div></div><div class="shield">✓</div></header>
+<section class="content">
+<div id="intro"><div class="verify">Security checkpoint</div><h1>Are you human?</h1><p class="intro">Complete five increasingly suspicious verification levels. Every run uses newly generated questions.</p><button class="primary" id="start">Begin verification</button><div class="small">5 levels · 10 minute global limit · 5 answer choices</div></div>
+<div id="game" hidden>
+<div class="verify" id="levelName"></div><div class="progress" id="progress"></div>
+<div class="stats"><div class="stat"><div class="label">Level time</div><div class="value timer" id="levelTimer">00:00</div></div><div class="stat"><div class="label">Global time</div><div class="value timer" id="globalTimer">10:00</div></div></div>
+<div class="question" id="question"></div><div class="options" id="options"></div><div class="notice" id="notice"></div>
+<button class="secondary" id="retry" hidden>Retry this level — costs 1:00</button><button class="secondary" id="restart" hidden>Restart from beginning</button>
+</div>
+</section></main>
+<script>
+let token="",state=null,timer=null;
+const $=id=>document.getElementById(id);
+function fmt(s){s=Math.max(0,s);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+function renderProgress(){ $("progress").innerHTML=[0,1,2,3,4].map(i=>`<div class="dot ${i<state.level?"done":i===state.level?"active":""}"></div>`).join("")}
+function render(){
+ $("intro").hidden=true;$("game").hidden=false; $("levelName").textContent=`LEVEL ${state.level+1} · ${state.levelName}`;
+ $("levelTimer").textContent=fmt(state.levelRemaining);$("globalTimer").textContent=fmt(state.totalRemaining);renderProgress();
+ if(state.question){$("question").textContent=state.question.text;$("options").innerHTML="";
+ state.question.options.forEach((x,i)=>{let b=document.createElement("button");b.className="opt";b.innerHTML=`<span class="badge">${String.fromCharCode(65+i)}</span><span>${x}</span>`;b.onclick=()=>answer(x);$("options").appendChild(b)})}
+}
+function tick(){
+ if(!state)return; state.levelRemaining--;state.totalRemaining--;render();
+ if(state.totalRemaining<=0){fail("Global 10-minute limit reached.");}
+ else if(state.levelRemaining<=0){fail("Level time expired.");}
+}
+function fail(msg){clearInterval(timer);state.failed=true;$("notice").className="notice bad";$("notice").textContent=msg+" You must restart or retry this level if time remains.";$("retry").hidden=false;$("restart").hidden=false;$("options").innerHTML="";render();}
+async function start(url="/api/start",body={}){
+ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw Error(d.error||"Request failed");token=d.token;state=d;render();clearInterval(timer);timer=setInterval(tick,1000)
+}
+async function answer(x){
+ if(state.failed||state.completed)return;
+ const r=await fetch("/api/answer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token,answer:x})});const d=await r.json();
+ if(d.correct){state=d;$("notice").className="notice good";$("notice").textContent=d.complete?"Verification complete.":"Correct. Next challenge unlocked.";
+ if(d.complete){clearInterval(timer);$("question").innerHTML=`<div class="reward">🤖 HUMAN VERIFICATION COMPLETE<div class="key">KEY: ${d.key}</div><small>Human status: provisionally accepted.</small></div>`;$("options").innerHTML="";return} setTimeout(()=>{$("notice").className="notice";render()},350)}
+ else fail(d.reason||d.error||"Incorrect answer.")
+}
+$("start").onclick=()=>start();
+$("restart").onclick=()=>start("/api/restart",{token});
+$("retry").onclick=async()=>{const r=await fetch("/api/retry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})});const d=await r.json();if(!r.ok){alert(d.error);return}state=d;$("retry").hidden=true;$("restart").hidden=true;$("notice").className="notice good";$("notice").textContent="Retry started. 60 seconds deducted from the global clock.";render()}
+</script>
+</body></html>
